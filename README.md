@@ -84,7 +84,7 @@ Dataset bruto (7,043 registros)
     ├── Carga y comparación de todos los modelos exportados (.pkl)
     ├── Métricas: Accuracy, Recall, F1, AUC — ordenadas por Recall
     ├── Matrices de confusión y curvas ROC
-    └── Modelo ganador: RF Recall Balanceado — mayor Recall con control de overfitting
+    └── Modelo ganador: lr_saga_opt_balanced (RL) — Recall=0.8619 en test de producción
 ```
 
 ---
@@ -155,22 +155,6 @@ Se entrenaron modelos con **3 solvers** y diferentes estrategias de balance:
 
 > Ambas configuraciones de GridSearch usan `scoring='recall'` en coherencia con el objetivo operativo del proyecto.
 
-**Resultados comparativos — Regresión Logística:**
-
-| Configuración | Accuracy | Precision | Recall | F1 | AUC |
-|---|---|---|---|---|---|
-| L-BFGS base (Balanced) | 0.8057 | 0.5885 | 0.8614 | 0.6993 | ~0.91 |
-| L-BFGS base (None) | 0.8523 | 0.7425 | 0.6687 | 0.7036 | ~0.91 |
-| L-BFGS opt-None (scoring=recall) | 0.8523 | 0.7377 | 0.6777 | 0.7064 | ~0.91 |
-| L-BFGS opt-Balanced (scoring=recall) | 0.8057 | 0.5885 | 0.8614 | 0.6993 | ~0.91 |
-| **Liblinear opt-Balanced (scoring=recall)** | **0.7970** | **0.5737** | **0.8795** | **0.6944** | ~0.91 |
-| SAGA opt-Balanced (scoring=recall) | 0.8057 | 0.5885 | 0.8614 | 0.6993 | ~0.91 |
-
-> El mejor modelo de RL por Recall es **Liblinear opt-Balanced** con Recall = 0.8795.  
-> Todos los modelos de RL mostraron **sin overfitting** (diferencia Train-Test ≤ 0.01).
-
----
-
 #### Modelo Random Forest (`03_Random_Forest_Churn.ipynb`)
 
 **Modelos base entrenados:**
@@ -206,15 +190,17 @@ Total: **90 combinaciones** evaluadas. Para cada combinación se calcula el **Re
 - Distribución antes: No Churn 3,712 / Churn 1,348.
 - Distribución después: No Churn 3,712 / Churn 3,712 (balanceo 1:1).
 
-**Resultados comparativos — Random Forest (ordenados por Recall):**
+**Resultados en producción — Random Forest (ordenados por Recall, `telco_Prue.csv` — 705 registros, 181 Churn):**
 
-| Modelo | Accuracy | Precision | Recall | F1 | AUC | Churn detectados | Churn perdidos |
+| Modelo (archivo) | Accuracy | Precision | Recall | F1 | AUC | Churn detectados | Churn perdidos |
 |---|---|---|---|---|---|---|---|
-| Base con balanceo | 0.7796 | 0.5523 | 0.8434 | 0.6675 | 0.8858 | 280 | 52 |
-| RF + Oversampling | 0.7994 | 0.5908 | 0.8012 | 0.6801 | 0.8864 | 270 | 67 |
-| **Recall Balanceado (OOB-Recall)** | **0.7796** | **0.5511** | **0.8614** | **0.6722** | **0.8896** | **286** | **46** |
-| Recall sin balanceo (OOB-Recall) | 0.8215 | 0.7366 | 0.4970 | 0.5935 | 0.8888 | 165 | 167 |
-| Base sin balanceo | 0.8207 | 0.7442 | 0.4819 | 0.5850 | 0.8847 | 160 | 172 |
+| RF + Oversampling (`RForest_oversampling`) | 0.8298 | 0.6263 | 0.8343 | 0.7156 | 0.8312 | 151 | 30 |
+| Recall Balanceado OOB (`RForest_recall_bal`) | 0.7887 | 0.5593 | 0.8343 | 0.6696 | 0.8036 | 151 | 30 |
+| Base con balanceo (`RForest_base_bal`) | 0.7972 | 0.5727 | 0.8287 | 0.6772 | 0.8075 | 150 | 31 |
+| OOB-Recall balanceado (`RForest_oob`) | 0.8411 | 0.6549 | 0.8066 | 0.7228 | 0.8298 | 146 | 35 |
+| OOB-Recall sin balanceo (`RForest_oob_unbal`) | 0.8496 | 0.7549 | 0.6133 | 0.6768 | 0.7723 | 111 | 70 |
+| Recall sin balanceo OOB (`RForest_recall_unbal`) | 0.8113 | 0.7109 | 0.4475 | 0.5492 | 0.6923 | 81 | 100 |
+| Base sin balanceo (`RForest_base_unbal`) | 0.8043 | 0.7126 | 0.3978 | 0.5106 | 0.6712 | 72 | 109 |
 
 **Análisis de overfitting:**
 
@@ -239,7 +225,41 @@ Se cargaron dinámicamente todos los modelos exportados en formato `.pkl` desde 
 4. **Ranking por Recall** — criterio principal alineado al objetivo operativo.
 5. Visualización: matrices de confusión y curvas ROC comparativas.
 
-**Modelos evaluados:** 20 modelos (5 Random Forest + 15 Regresión Logística con 3 solvers × 5 estrategias.
+**Modelos evaluados:** 21 modelos (6 Random Forest + 15 Regresión Logística con 3 solvers × 5 estrategias).
+
+**Resultados en producción — Regresión Logística (ordenados por Recall):**
+
+| Modelo | Accuracy | Recall | F1 | AUC |
+|---|---|---|---|---|
+| lr_lbfgs_base (Balanced) | 0.8113 | 0.8619 | 0.7011 | 0.8279 |
+| lr_lbfgs_opt_balanced | 0.8113 | 0.8619 | 0.7011 | 0.8279 |
+| lr_lbfgs_oversampling | 0.8085 | 0.8619 | 0.6980 | 0.8260 |
+| lr_saga_base (Balanced) | 0.8128 | 0.8619 | 0.7027 | 0.8288 |
+| **lr_saga_opt_balanced** | **0.8142** | **0.8619** | **0.7043** | **0.8298** |
+| lr_liblinear_oversampling | 0.8057 | 0.8619 | 0.6949 | 0.8241 |
+| lr_saga_oversampling | 0.8085 | 0.8619 | 0.6980 | 0.8260 |
+| lr_liblinear_base (Balanced) | 0.8113 | 0.8564 | 0.6998 | 0.8261 |
+| lr_liblinear_opt_balanced | 0.8014 | 0.8564 | 0.6889 | 0.8194 |
+| lr_lbfgs_opt_none | 0.8596 | 0.6796 | 0.7130 | 0.8007 |
+| lr_liblinear_opt_none | 0.8610 | 0.6796 | 0.7151 | 0.8016 |
+| lr_saga_opt_none | 0.8582 | 0.6740 | 0.7093 | 0.7979 |
+| lr_lbfgs_base_none | 0.8511 | 0.6630 | 0.6957 | 0.7895 |
+| lr_liblinear_base_none | 0.8496 | 0.6630 | 0.6936 | 0.7886 |
+| lr_saga_base_none | 0.8511 | 0.6630 | 0.6957 | 0.7895 |
+
+> 7 modelos de RL balanceados alcanzan Recall=0.8619. El ganador es **lr_saga_opt_balanced** por tener el mayor F1 (0.7043) y AUC (0.8298) entre los empatados.
+
+**Resultados en producción — Random Forest (ordenados por Recall):**
+
+| Modelo | Accuracy | Recall | F1 | AUC |
+|---|---|---|---|---|
+| RForest_oversampling | 0.8298 | 0.8343 | 0.7156 | 0.8312 |
+| RForest_recall_bal | 0.7887 | 0.8343 | 0.6696 | 0.8036 |
+| RForest_base_bal | 0.7972 | 0.8287 | 0.6772 | 0.8075 |
+| RForest_recall_unbal | 0.8113 | 0.4475 | 0.5492 | 0.6923 |
+| RForest_base_unbal | 0.8043 | 0.3978 | 0.5106 | 0.6712 |
+
+> En el test de producción, todos los modelos de RL balanceados superan a los RF en Recall (0.8619 vs 0.8343 del mejor RF).
 
 **Herramientas utilizadas:**
 - `scikit-learn`: modelos, métricas, preprocesado.
@@ -285,12 +305,12 @@ Churn/
 │   ├── clasificacion/
 │   │   ├── RForest_base_unbal.pkl    # RF base sin balanceo
 │   │   ├── RForest_base_bal.pkl      # RF base con class_weight='balanced'
-│   │   ├── RForest_recall_bal.pkl    # RF optimizado OOB-Recall con balanceo  ← modelo principal
-│   │   ├── RForest_recall_unbal.pkl  # RF optimizado OOB-Recall sin balanceo
+│   │   ├── RForest_recall_bal.pkl    # RF OOB-Recall balanceado 
+│   │   ├── RForest_recall_unbal.pkl  # RF OOB-Recall sin balanceo 
 │   │   ├── RForest_oversampling.pkl  # RF con RandomOverSampler
 │   │   ├── lr_lbfgs_*.pkl            # Modelos RL solver L-BFGS (5 variantes)
 │   │   ├── lr_liblinear_*.pkl        # Modelos RL solver Liblinear (5 variantes)
-│   │   └── lr_saga_*.pkl             # Modelos RL solver SAGA (5 variantes)
+│   │   └── lr_saga_*.pkl             # Modelos RL solver SAGA   ← lr_saga_opt_balanced es el ganador
 │   └── scaler/
 │       └── minmaxFull_Telco.pkl      # MinMaxScaler ajustado sobre X_train
 ├── utils/
