@@ -1,0 +1,28 @@
+# ── Python ──────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+
+# ── Jupyter ──────────────────────────────────────────────
+.ipynb_checkpoints/
+
+
+# ── Modelos entrenados (.pkl) ────────────────────────────
+# Los modelos se regeneran ejecutando los notebooks;
+# solo se versiona el scaler porque lo requiere la evaluación.
+
+
+# ── Datasets grandes ─────────────────────────────────────
+# El dataset original se descarga desde Kaggle/GitHub.
+# Los datasets preparados se regeneran desde el notebook 01.
+
+
+# ── Archivos temporales / sistema ────────────────────────
+*.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Entornos virtuales ───────────────────────────────────
+venv/
+.venv/
+env/
