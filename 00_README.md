@@ -62,7 +62,7 @@ Dataset bruto (7,043 registros)
          ▼
 01. Preparación de datos (notebook 01)
     ├── Eliminación de columnas irrelevantes (Country, City, Churn Category, etc.)
-    ├── Imputación semántica de nulos (Offer → "No offer", Internet Type → "No internet")
+    ├── Imputación de nulos (Offer → "No offer", Internet Type → "No internet")
     ├── Detección y eliminación de outliers (LOF, 12 registros)
     └── División: 90% entrenamiento (6,326) │ 10% prueba de producción (705)
          │
@@ -82,7 +82,7 @@ Dataset bruto (7,043 registros)
          │
          ▼
 04. Evaluación entre modelos (notebook 04)
-    ├── Carga dinámica de 12 modelos exportados (.pkl) desde la API de GitHub
+    ├── Carga  de modelos exportados (.pkl) desde la API de GitHub
     ├── Métricas: Accuracy, Recall, F1, AUC — ordenadas por Recall y f1 score
     ├── Matrices de confusión y curvas ROC comparativas
     └── Modelo ganador: lr_saga_base (RL) — Recall=0.8619, F1=0.7027 en producción
@@ -94,61 +94,56 @@ Dataset bruto (7,043 registros)
 
 ### 5.1 Preparación de Datos (`01_Preparacion_Clasificacion_Churn.ipynb`)
 
-#### Carga e inspección
+#### Carga del dataset
 - Dataset original: 7,043 registros, 50 columnas, sin valores nulos en variables numéricas.
 - Variables categóricas con nulos: Offer (3,877) y Internet Type (1,526).
 
 #### Limpieza de variables
-Se eliminaron variables que no aportan a la predicción de churn o que introducen ruido:
+Se eliminaron variables que no aportan al modelo o que introducen ruido:
 
-| Variable eliminada | Motivo |
-|---|---|
-| Churn Category, Churn Reason | Solo están diligenciadas para clientes que abandonan (fuga potencial y sesgo) |
-| Customer ID, Country, State, City | No aportan comportamiento de negocio |
-| Quarter, Under 30, Dependents | Redundantes con otras variables |
+Variable eliminada 
+
+-Churn Category, Churn Reason 
+-Customer ID, Country, State, City 
+-Quarter, Under 30, Dependents 
 
 #### Imputación de nulos
 Los valores NaN no eran inconsistencias sino comportamientos reales del negocio:
 
-| Variable | Valor imputado | Justificación |
-|---|---|---|
-| Offer | No offer | El cliente no tiene oferta activa |
-| Internet Type | `No internet | El cliente no tiene internet contratado |
+| Variable | Valores imputados |
+| Offer | No offer 
+| Internet Type | `No internet | 
 
-#### Detección de outliers — LOF (Local Outlier Factor)
-- Aplicado sobre 15 variables numéricas de comportamiento (excluyendo coordenadas geográficas y CLTV).
-- Configuración: se utilizo comparacion con 13 vecinos cercanos para la deteccion de outliers, `n_neighbors=13`, `contamination='auto'`.
-- Resultado: 12 registros atípicos eliminados 
+#### Detección de outliers — LOF 
+- lo aplicamos sobre variables numéricas de comportamiento (excluyendo coordenadas geográficas y CLTV), se utilizo comparacion con 13 vecinos cercanos para la deteccion de outliers, `n_neighbors=13`, `contamination='auto'`. se obtuvo como resultado la eliminacion de 12 registros atípicos eliminados 
 
 #### División del dataset
-División manual previa al proceso de modelado:
+Dividimos el dataset en 2 conjuntos:
 - **`telco_Prep.csv`** (90% = 6,326 registros):  datos utlizados en el entrenamiento y validación de modelos.
-- **`telco_Prue.csv`** (10% = 705 registros): prueba final independiente.
+- **`telco_Prue.csv`** (10% = 705 registros): utilizado para prueba final independiente.
 
 ---
 
 ### 5.2 Creación de Modelos
 
 #### Preparación para el modelado (Regresión Logística - Random Forest)
-1. **One-Hot Encoding** sobre variables categóricas (pd.get_dummies, drop_first=True ).
+1. **One-Hot Encoding** lo aplicamos sobre variables categóricas 
 2. **Exclusión de variables de fuga**: Churn Score, CLTV, Total Revenue, Customer Status, Satisfaction Score, variables geográficas.
-3. **División train/test**: 80% entrenamiento (5,060) / 20% prueba (1,266), random_state=123.
-4. **Escalado**: MinMaxScaler aplicado sobre las 11 variables numéricas del conjunto de entrenamiento.
-
+3. **División train/test**: 80% entrenamiento/20% prueba  random_state=123.
+4. **Escalado**: Aplicamos MinMaxScaler  sobre las 11 variables numéricas 
 ---
 
 #### Modelo de Regresión Logística (`02_Regresion_Logistica_Churn.ipynb`)
+entrenamos los modelo con 3 solvers (L-BFGS, Liblinear (L1), SAGA (ElasticNet)) y evaluamos con diferentes estrategias de balance:
 
-Se entrenaron modelos con **3 solvers** y diferentes estrategias de balance:
 
-
-**Estrategias evaluadas:**
+**Estrategias de balanceo:**
 - Base Balanced: 
-- Base None: sin corrección de clases — punto de referencia desbalanceado.
-- **GridSearch Balanced**: búsqueda de C óptimo con scoring={'recall','f1'} y refit='f1', Se configuró scoring dual para obtener un modelo más estable entre sensibilidad (Recall) y rendimiento global (F1).
-- **Oversampling**: RandomOverSampler evaluado durante el desarrollo pero no exportado — no mostró mejora significativa sobre los modelos base balanceados.
+- Base None: aplicamos el modelo con los mismos parametros sobre la base desbalanceada para determinar el desempeño del modelo base sin balanceo.
+- **GridSearch Balanced**: inicialmente enfocamos nuestro modelo hacia la optimizacion del recall, sin enmbargo tomamos la decision de encontrar una solucion mas adecuada que nos permitiera un balance entre Recall y F1, para ello, configuramos el modelo para obtener un modelo más estable entre sensibilidad (Recall) y rendimiento global (F1).
+- **Oversampling**: RandomOverSampler lo evaluamos durante el proceso de creacion de nuestros modelos pero no encontramos mejorar significativas en el desempeño del modelo por lo que decidimos descartarlo. 
 
-> con GridSearch pasamos de priorizar únicamente Recall a una evaluación mas equilibrada entre (Recall + F1), logrando mayor estabilidad sin sacrificar la capacidad de detección. 
+> Pasamos de priorizar únicamente Recall a a considerar una evaluación mas equilibrada entre (Recall + F1), logrando mayor estabilidad sin sacrificar la capacidad de detección. 
 El modelo ganador de Regresión Logística es el `lr_saga_base` con Recall=0.8619, F1=0.7027 en producción.
 
 
@@ -164,7 +159,6 @@ El modelo ganador de Regresión Logística es el `lr_saga_base` con Recall=0.861
 | Base sin balanceo | 0.8263 | 0.4819 | 0.5850 | 0.8847 |
 | Base con balanceo | 0.7964 | 0.8434 | 0.6675 | 0.8858 |
 
-> Con class_weight='balanced' sacrificamos accuracy global pero ganamos significativamente en Recall. Sin balanceo, el modelo tiende a predecir "No Churn" por el desbalanceo 73/27%.
 
 **Grid Search OOB — Recall + F1**
 
@@ -175,9 +169,7 @@ El modelo ganador de Regresión Logística es el `lr_saga_base` con Recall=0.861
 | max_depth | 5, 10, 15 |
 | criterion | gini, entropy |
 
-Total: **90 combinaciones** evaluadas. Para cada combinación se calcula el **Recall OOB** 
-
-**¿Por qué OOB en lugar de Cross-Validation?**
+en la optimizacion de nuestro modelo de random forest con GridSearch decidimos buscar el mejor modelo con la combinacion de Recall y F1.
 
 Usamos oob por que al intentar con cv nos tomo mucho tiempo de ejecucion y oob nos funciono mejor tambien intentamos añadir los siguientes parametros      'min_samples_split': [2, 5, 10], 'min_samples_leaf': [1, 2, 4], para determinar si nos podian reflejar una optimizacion del modelo sin embargo el tiempo de respuesta no fue optimo (+7 min) y decidimos desestimar estos datos y trabajar solo con los siguientes parametros con los que tardamos alrededor de 3 min en ejecucion.
       'n_estimators': [100, 150, 200],
@@ -186,10 +178,7 @@ Usamos oob por que al intentar con cv nos tomo mucho tiempo de ejecucion y oob n
       'criterion': ['gini', 'entropy'],
 
 
-**Evolución de la estrategia de optimización:**
-
-| Etapa | Métrica OOB | Mejores hiperparámetros | Recall OOB |
-|---|---|---|---|
+aqui vemos una comparacion del cambio en nuestros hyperámetros con respecto a la version inicial de nuestro modelo de Random Forest.
 | Versión inicial (solo Recall) | Maximizar Recall | criterion=entropy, depth=5, max_features=9, n=200 | 0.8618 |
 | Versión final (Recall + F1) | Score combinado | criterion=entropy, depth=5, max_features=log2, n=200 | 0.8507 |
 
@@ -199,9 +188,9 @@ Usamos oob por que al intentar con cv nos tomo mucho tiempo de ejecucion y oob n
 
 ### 5.3 Evaluación de Modelos (`04_Evaluacion_modelos.ipynb`)
 
-Cargamos todos los modelos exportados en formato `.pkl` desde la API de GitHub y se evaluaron sobre el conjunto de prueba de producción (`telco_Prue.csv`), que nunca fue visto durante el entrenamiento.
+**Resultados Regresión Logística (ordenados por Recall, `telco_Prue.csv` — 705 registros, 181 Churn):**
 
-**Resultados en producción — Regresión Logística (ordenados por Recall, `telco_Prue.csv` — 705 registros, 181 Churn):**
+Despues de realizar la implementacion de pruebas con los datos reservaod identificacion que nuestro modelo mas equilibrado es el `lr_saga_base` con Recall=0.8619, F1=0.7027.
 
 | Modelo | Accuracy | Recall | F1 | AUC |
 |---|---|---|---|---|
@@ -215,9 +204,8 @@ Cargamos todos los modelos exportados en formato `.pkl` desde la API de GitHub y
 | lr_saga_base_none | 0.8511 | 0.6630 | 0.6957 | 0.7895 |
 | lr_liblinear_base_none | 0.8496 | 0.6630 | 0.6936 | 0.7886 |
 
-> El ganador es **lr_saga_base** por tener la mejor combinación de Recall(0.8619) y F1 (0.7027) y AUC (0.8288) entre los dos modelos empatados en Recall.
 
-**Resultados en producción — Random Forest (ordenados por Recall):**
+**Resultados Random Forest (ordenados por Recall):**
 
 | Modelo | Accuracy | Recall | F1 | AUC | Churn detectados | Churn perdidos |
 |---|---|---|---|---|---|---|
@@ -225,7 +213,7 @@ Cargamos todos los modelos exportados en formato `.pkl` desde la API de GitHub y
 | RForest_base_bal | 0.7972 | 0.8287 | 0.6772 | 0.8075 | 150 | 31 |
 | RForest_base_unbal | 0.8043 | 0.3978 | 0.5106 | 0.6712 | 72 | 109 |
 
-> En el test de producción, todos los modelos de RL balanceados superan al mejor RF en Recall (0.8619 vs 0.8343). El modelo `lr_saga_base` detecta 156 de 181 churners, perdiendo solo 25.
+observamos que el modelo `RForest_recall_bal` es el ganador de la competencia con Recall=0.8343, F1=0.6756, sin embargo el modelo de regresion logistica demuestra un mayor balance entre el recall y el F1.
 
 **Herramientas utilizadas:**
 - `scikit-learn`: modelos, métricas, preprocesado.
