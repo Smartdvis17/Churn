@@ -144,7 +144,7 @@ entrenamos los modelo con 3 solvers (L-BFGS, Liblinear (L1), SAGA (ElasticNet)) 
 - **Oversampling**: RandomOverSampler lo evaluamos durante el proceso de creacion de nuestros modelos pero no encontramos mejorar significativas en el desempeño del modelo por lo que decidimos descartarlo. 
 
 > Pasamos de priorizar únicamente Recall a a considerar una evaluación mas equilibrada entre (Recall + F1), logrando mayor estabilidad sin sacrificar la capacidad de detección. 
-El modelo ganador de Regresión Logística es el `lr_saga_base` con Recall=0.8619, F1=0.7027 en producción.
+El modelo ganador de Regresión Logística es el `lr_saga_base` 
 
 
 
@@ -171,7 +171,7 @@ El modelo ganador de Regresión Logística es el `lr_saga_base` con Recall=0.861
 
 en la optimizacion de nuestro modelo de random forest con GridSearch decidimos buscar el mejor modelo con la combinacion de Recall y F1.
 
-Usamos oob por que al intentar con cv nos tomo mucho tiempo de ejecucion y oob nos funciono mejor tambien intentamos añadir los siguientes parametros      'min_samples_split': [2, 5, 10], 'min_samples_leaf': [1, 2, 4], para determinar si nos podian reflejar una optimizacion del modelo sin embargo el tiempo de respuesta no fue optimo (+7 min) y decidimos desestimar estos datos y trabajar solo con los siguientes parametros con los que tardamos alrededor de 3 min en ejecucion.
+Usamos oob por que al intentar con cv nos tomo mucho tiempo de ejecucion y oob nos funciono mejor tambien intentamos añadir los siguientes parametros 'min_samples_split': [2, 5, 10], 'min_samples_leaf': [1, 2, 4], para determinar si nos podian reflejar una optimizacion del modelo sin embargo el tiempo de respuesta no fue optimo (+7 min) y decidimos desestimar estos datos y trabajar solo con los siguientes parametros con los que tardamos alrededor de 3 min en ejecucion.
       'n_estimators': [100, 150, 200],
       'max_features': ['sqrt', 'log2', 5, 7, 9],
       'max_depth': [5, 10, 15],  
@@ -190,19 +190,12 @@ aqui vemos una comparacion del cambio en nuestros hyperámetros con respecto a l
 
 **Resultados Regresión Logística (ordenados por Recall, `telco_Prue.csv` — 705 registros, 181 Churn):**
 
-Despues de realizar la implementacion de pruebas con los datos reservaod identificacion que nuestro modelo mas equilibrado es el `lr_saga_base` con Recall=0.8619, F1=0.7027.
+Despues de realizar la implementacion de pruebas con los datos reservaod identificamos que nuestro modelo mas equilibrado es el `lr_saga_base` con Recall=0.8619, F1=0.7027.
 
 | Modelo | Accuracy | Recall | F1 | AUC |
 |---|---|---|---|---|
 | **lr_saga_base** | **0.8128** | **0.8619** | **0.7027** | **0.8288** |
-| lr_lbfgs_base | 0.8113 | 0.8619 | 0.7011 | 0.8279 |
-| lr_liblinear_base | 0.8113 | 0.8564 | 0.6998 | 0.8261 |
-| lr_liblinear_opt_balanced | 0.8071 | 0.8508 | 0.6937 | 0.8214 |
-| lr_saga_opt_balanced | 0.8071 | 0.8508 | 0.6937 | 0.8214 |
-| lr_lbfgs_opt_balanced | 0.8057 | 0.8508 | 0.6921 | 0.8205 |
-| lr_lbfgs_base_none | 0.8511 | 0.6630 | 0.6957 | 0.7895 |
-| lr_saga_base_none | 0.8511 | 0.6630 | 0.6957 | 0.7895 |
-| lr_liblinear_base_none | 0.8496 | 0.6630 | 0.6936 | 0.7886 |
+
 
 
 **Resultados Random Forest (ordenados por Recall):**
