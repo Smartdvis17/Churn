@@ -76,16 +76,16 @@ Dataset bruto (7,043 registros)
          ▼
 03. Random Forest (notebook 03)
     ├── Modelos base (sin/con class_weight="balanced")
-    ├── Grid Search OOB combinado: score = 0.5×Recall_OOB + 0.5×F1_OOB
+    ├── Grid Search OOB
     │   90 combinaciones - thresholds [0.3, 0.4, 0.5] — 
-    └── Oversampling evaluado pero descartado (sobreajuste ligero, sin mejora relevante)
+    └── Oversampling evaluado pero descartado - no mostros mejoras en las metricas evaluadas
          │
          ▼
 04. Evaluación entre modelos (notebook 04)
-    ├── Carga  de modelos exportados (.pkl) desde la API de GitHub
+    ├── Carga  de modelos 
     ├── Métricas: Accuracy, Recall, F1, AUC — ordenadas por Recall y f1 score
     ├── Matrices de confusión y curvas ROC comparativas
-    └── Modelo ganador: lr_saga_base (RL) — Recall=0.8619, F1=0.7027 en producción
+    └── Modelo ganador: lr_saga_base (RL)
 ```
 
 ---
@@ -208,13 +208,6 @@ Despues de realizar la implementacion de pruebas con los datos reservaod identif
 
 observamos que el modelo `RForest_recall_bal` es el ganador de la competencia con Recall=0.8343, F1=0.6756, sin embargo el modelo de regresion logistica demuestra un mayor balance entre el recall y el F1.
 
-**Herramientas utilizadas:**
-- `scikit-learn`: modelos, métricas, preprocesado.
-- `imbalanced-learn`: RandomOverSampler (exploración, no exportado en versión final).
-- `joblib`: serialización de modelos.
-- `matplotlib` / `seaborn`: visualizaciones.
-
----
 
 ## 6. Conclusiones
 
