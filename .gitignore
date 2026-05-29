@@ -26,3 +26,5 @@ desktop.ini
 venv/
 .venv/
 env/
+.parquet
+datasets/
